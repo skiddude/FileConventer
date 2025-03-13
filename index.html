@@ -4,102 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Converter</title>
-    <style>
-        body {
-            background-color: #121212;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
-        .button-container {
-            display: flex;
-            gap: 10px; /* Space between buttons */
-        }
-        .button {
-            background-color: #3f3f3f;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            transition: background-color 0.3s;
-        }
-        .button:hover {
-            background-color: #5a5a5a;
-        }
-        .upload-container {
-            border: 2px dashed #3f3f3f;
-            padding: 20px;
-            width: 300px;
-            display: none; /* Initially hidden */
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            position: relative;
-        }
-        .upload-container.active {
-            display: flex; /* Show when active */
-        }
-        .upload-text {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-        .drop-text {
-            font-weight: bold;
-            font-size: 24px;
-            display: none; /* Initially hidden */
-        }
-        #fileInput {
-            display: none; /* Hide the file input */
-        }
-        canvas {
-            display: none; /* Hide canvas element */
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-
-    <h2>Convert Files Easily</h2>
+<body class="bg-zinc-900 text-zinc-100 font-sans flex flex-col items-center justify-center min-h-screen m-0 text-center">
+    <h1 class="text-2xl md:text-3xl font-semibold mb-8">Convert Files Easily</h1>
     
-    <div class="button-container">
-        <button class="button" id="pngToIco">
-            PNG to ICO
-        </button>
-        <button class="button" id="svgToPng">
-            SVG to PNG
-        </button>
+    <div class="flex flex-col gap-4 w-full max-w-md px-4">
+        <div class="flex gap-3 justify-center">
+            <button 
+                class="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
+                id="pngToIco"
+            >
+                PNG to ICO
+            </button>
+            <button 
+                class="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
+                id="svgToPng"
+            >
+                SVG to PNG
+            </button>
+        </div>
+
+        <!-- Upload Container -->
+        <div 
+            class="border-2 border-dashed border-zinc-700 rounded-xl p-6 w-full hidden flex-col items-center justify-center cursor-pointer relative group transition-colors"
+            id="uploadArea"
+        >
+            <div class="text-center space-y-3">
+                <p class="text-lg font-medium">Drag and Drop</p>
+                <p class="hidden font-bold text-xl text-blue-400" id="dropText">Drop SVG file here</p>
+                <p class="text-zinc-400">or</p>
+                <label class="cursor-pointer inline-block">
+                    <span class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-md transition-colors duration-200">
+                        Browse Files
+                    </span>
+                    <input type="file" class="hidden" id="fileInput" accept=".svg" />
+                </label>
+            </div>
+        </div>
+
+        <div class="mt-4 space-y-2">
+            <h2 class="text-lg font-medium" id="fileName" aria-live="polite">No file selected</h2>
+            <div class="hidden text-sm text-zinc-400 space-y-1" id="dimensionDisplay">
+                <div>Original: <span id="originalDimensions" class="font-mono">N/A</span></div>
+                <div>Scaled: <span id="scaledDimensions" class="font-mono">N/A</span></div>
+            </div>
+        </div>
     </div>
 
-    <!-- Upload Container for SVG -->
-    <div class="upload-container" id="uploadArea">
-        <p class="upload-text">Drag and Drop</p>
-        <p class="drop-text" id="dropText">Drop SVG file</p>
-        <p>or</p>
-        <label for="fileInput" style="cursor: pointer;">
-            <button>Upload SVG</button>
-        </label>
-        <input type="file" id="fileInput" accept=".svg" />
-    </div>
-
-    <h2 id="fileName">No file selected</h2>
-    
-    <div class="dimension" id="dimensionDisplay" style="display:none;">
-        <div>Original: <span id="originalDimensions">N/A</span></div>
-        <div>Scaled: <span id="scaledDimensions">N/A</span></div>
-    </div>
-
-    <canvas id="canvas"></canvas>
+    <canvas class="hidden" id="canvas"></canvas>
 
     <script>
+        // Improved JavaScript with better error handling
         const fileInput = document.getElementById('fileInput');
         const uploadArea = document.getElementById('uploadArea');
         const fileNameDisplay = document.getElementById('fileName');
@@ -108,94 +64,110 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const dropText = document.getElementById('dropText');
-        let originalWidth, originalHeight;
-        let originalFileName = '';
+        
+        let currentFileType = null;
+        let originalWidth = 0;
+        let originalHeight = 0;
 
-        // Handle PNG to ICO button click (mock functionality)
-        document.getElementById('pngToIco').addEventListener('click', function() {
-            alert('PNG to ICO functionality is not implemented yet.');
+        // Button handlers
+        document.getElementById('pngToIco').addEventListener('click', () => {
+            showAlert('PNG to ICO conversion is not available yet');
+            resetUploadArea();
         });
 
-        // Handle SVG to PNG button click
-        document.getElementById('svgToPng').addEventListener('click', function() {
-            uploadArea.classList.add('active'); // Show upload area
-            resetUploadArea(); // Reset display
+        document.getElementById('svgToPng').addEventListener('click', () => {
+            currentFileType = 'svg';
+            uploadArea.classList.remove('hidden');
+            resetUploadArea();
         });
 
-        // Handle file input change for SVG to PNG conversion
-        fileInput.addEventListener('change', function(event) {
+        // File input handler
+        fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
-            if (file && file.type === 'image/svg+xml') {
-                handleFileUpload(file);
-            } else {
-                alert('Please upload a valid SVG file.');
-            }
+            handleFileUpload(file);
         });
 
-        // Handle drag and drop uploads
+        // Drag and drop handlers
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadArea.style.backgroundColor = '#1e1e1e';
-            dropText.style.display = 'block'; // Show drop text
+            uploadArea.classList.add('border-blue-500', 'bg-zinc-800');
+            dropText.classList.remove('hidden');
         });
 
         uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.backgroundColor = '';
-            dropText.style.display = 'none'; // Hide drop text
+            uploadArea.classList.remove('border-blue-500', 'bg-zinc-800');
+            dropText.classList.add('hidden');
         });
 
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadArea.style.backgroundColor = '';
-            dropText.style.display = 'none'; // Hide drop text
+            uploadArea.classList.remove('border-blue-500', 'bg-zinc-800');
+            dropText.classList.add('hidden');
+            
             const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const file = files[0];
-                if (file.type === 'image/svg+xml') {
-                    handleFileUpload(file);
-                } else {
-                    alert('Please drop a valid SVG file.');
-                }
-            }
+            if (files.length > 0) handleFileUpload(files[0]);
         });
 
         function resetUploadArea() {
             fileNameDisplay.textContent = 'No file selected';
             originalDimensions.textContent = 'N/A';
             scaledDimensions.textContent = 'N/A';
-            document.getElementById('dimensionDisplay').style.display = 'none'; // Hide dimensions
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+            document.getElementById('dimensionDisplay').classList.add('hidden');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            fileInput.value = '';
         }
 
-        function handleFileUpload(file) {
-            const reader = new FileReader();
-            originalFileName = file.name.replace(/\.svg$/i, ''); // Remove .svg extension
-            fileNameDisplay.textContent = file.name;
+        async function handleFileUpload(file) {
+            if (!file) return;
 
-            reader.onload = function(e) {
-                const svgData = e.target.result;
-                const img = new Image();
-                const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-                const url = URL.createObjectURL(svgBlob);
+            if (currentFileType === 'svg' && file.type !== 'image/svg+xml') {
+                showAlert('Please upload a valid SVG file');
+                return;
+            }
 
-                img.onload = function() {
-                    originalWidth = img.width;
-                    originalHeight = img.height;
-                    originalDimensions.textContent = `${originalWidth} × ${originalHeight}`;
-                    scaledDimensions.textContent = `${originalWidth} × ${originalHeight}`;
-                    
-                    // Set the canvas size to original dimensions initially
-                    canvas.width = originalWidth;
-                    canvas.height = originalHeight;
-                    ctx.drawImage(img, 0, 0);
-                    document.getElementById('dimensionDisplay').style.display = 'block'; // Show dimensions
-                    URL.revokeObjectURL(url); // Clean up
+            try {
+                const reader = new FileReader();
+                fileNameDisplay.textContent = file.name;
+
+                reader.onload = async (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        originalWidth = img.naturalWidth;
+                        originalHeight = img.naturalHeight;
+                        
+                        canvas.width = originalWidth;
+                        canvas.height = originalHeight;
+                        ctx.drawImage(img, 0, 0);
+                        
+                        updateDimensions();
+                        document.getElementById('dimensionDisplay').classList.remove('hidden');
+                    };
+                    img.onerror = () => showAlert('Error loading image file');
+                    img.src = URL.createObjectURL(file);
                 };
-                img.src = url; // Start loading the image
-            };
-            reader.readAsText(file); // Read the file as text
+
+                reader.onerror = () => showAlert('Error reading file');
+                reader.readAsDataURL(file);
+            } catch (error) {
+                showAlert(`Error processing file: ${error.message}`);
+            }
+        }
+
+        function updateDimensions() {
+            originalDimensions.textContent = `${originalWidth} × ${originalHeight}`;
+            scaledDimensions.textContent = `${originalWidth} × ${originalHeight}`;
+        }
+
+        function showAlert(message) {
+            const alert = document.createElement('div');
+            alert.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md animate-fade-in';
+            alert.textContent = message;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 3000);
         }
     </script>
-
 </body>
 </html>
